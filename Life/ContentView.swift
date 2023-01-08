@@ -84,11 +84,41 @@ struct Playfield
         setCell( row: 12, col: 2, true )
         setCell( row: 12, col: 3, true )
 
-        setCell( row: 22, col: 32, true )
-        setCell( row: 23, col: 31, true )
-        setCell( row: 24, col: 33, true )
-        setCell( row: 24, col: 32, true )
-        setCell( row: 24, col: 31, true )
+        setCell( row: 26, col: 33, true )
+        setCell( row: 27, col: 32, true )
+        setCell( row: 28, col: 34, true )
+        setCell( row: 28, col: 33, true )
+        setCell( row: 28, col: 32, true )
+
+        setCell( row: 26, col: 43, true )
+        setCell( row: 27, col: 42, true )
+        setCell( row: 28, col: 44, true )
+        setCell( row: 28, col: 43, true )
+        setCell( row: 28, col: 42, true )
+
+        setCell( row: 26, col: 53, true )
+        setCell( row: 27, col: 52, true )
+        setCell( row: 28, col: 54, true )
+        setCell( row: 28, col: 53, true )
+        setCell( row: 28, col: 52, true )
+
+        setCell( row: 16, col: 28, true )
+        setCell( row: 17, col: 27, true )
+        setCell( row: 18, col: 29, true )
+        setCell( row: 18, col: 28, true )
+        setCell( row: 18, col: 27, true )
+
+        setCell( row: 16, col: 43, true )
+        setCell( row: 17, col: 42, true )
+        setCell( row: 18, col: 44, true )
+        setCell( row: 18, col: 43, true )
+        setCell( row: 18, col: 42, true )
+
+        setCell( row: 16, col: 58, true )
+        setCell( row: 17, col: 57, true )
+        setCell( row: 18, col: 59, true )
+        setCell( row: 18, col: 58, true )
+        setCell( row: 18, col: 57, true )
     }
     
     func computeNeighbours( row: Int, col: Int ) -> Int
@@ -110,8 +140,8 @@ struct Playfield
 }
 
 struct ContentView: View {
-    @State private var field0 = Playfield(rows: 50, cols: 80)
-    @State private var field1 = Playfield(rows: 50, cols: 80)
+    @State private var field0 = Playfield(rows: 50, cols: 75)
+    @State private var field1 = Playfield(rows: 50, cols: 75)
     @State var stopTimer = false
     @State var cellCount = 0
     @State var generation = 0
@@ -119,7 +149,7 @@ struct ContentView: View {
     var body: some View {
         VStack( spacing: 1 ) {
             HStack {
-                Button( action: {
+                Button("Start") {
                     Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true ) { timer in
                         if stopTimer {
                             timer.invalidate()
@@ -127,23 +157,21 @@ struct ContentView: View {
                             next()
                         }
                     }
-                }) {
-                    Text( "Start" )
                 }
                 .padding()
                 .padding(.horizontal)
                 .background(Color.blue)
-                .cornerRadius(25)
-                
-                Button( action: {
+                .cornerRadius(10)
+
+                Button("Stop") {
                     stopTimer = true
-                }) {
-                    Text( "Stop" )
                 }
                 .padding()
                 .padding(.horizontal)
-                .background(Color.blue)
-                .cornerRadius(25)
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.roundedRectangle)
+                .controlSize(.large)
+                .tint(.blue)
             }
             .padding()
             
