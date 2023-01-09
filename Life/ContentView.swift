@@ -7,15 +7,21 @@
 
 import SwiftUI
 
+struct Cell
+{
+    var cell: Bool = false
+    var neighbours: UInt8 = 0
+}
+
 struct Row
 {
     var cols: Int
-    var cell: [Bool]
+    var col: [Cell]
     
     init( cols: Int )
     {
         self.cols = cols
-        cell = Array( repeating: false, count: cols )
+        col = Array( repeating: Cell(), count: cols )
     }
 }
 
@@ -24,44 +30,44 @@ struct Playfield
     let rows: Int
     let cols: Int
     
-    var data: [Row]
+    var row: [Row]
     
-    init( rows: Int, cols: Int )
+    init( rows aRows: Int, cols aCols: Int )
     {
-        self.rows = rows
-        self.cols = cols
-        data = Array(repeating: Row(cols: cols), count: rows)
+        self.rows = aRows
+        self.cols = aCols
+        row = Array(repeating: Row(cols: cols), count: rows)
         addVipers()
     }
     
-    func cell( row: Int, col: Int ) -> Bool
+    func cell( row aRow: Int, col aCol: Int ) -> Bool
     {
-        data[ row ].cell[ col ]
+        row[ aRow ].col[ aCol ].cell
     }
     
-    mutating func setCell( row: Int, col: Int, _ val: Bool )
+    mutating func setCell( row aRow: Int, col aCol: Int, _ val: Bool )
     {
-        data[ row ].cell[ col ] = val
+        row[ aRow ].col[ aCol ].cell = val
     }
     
-    func leftOf( _ col: Int ) -> Int
+    func leftOf( _ aCol: Int ) -> Int
     {
-        ( col + cols - 1 ) % cols
+        ( aCol + cols - 1 ) % cols
     }
     
-    func rightOf( _ col: Int ) -> Int
+    func rightOf( _ aCol: Int ) -> Int
     {
-        ( col + 1 ) % cols
+        ( aCol + 1 ) % cols
     }
     
-    func above( _ row: Int ) -> Int
+    func above( _ aRow: Int ) -> Int
     {
-        ( row + rows - 1 ) % rows
+        ( aRow + rows - 1 ) % rows
     }
     
-    func under( _ row: Int ) -> Int
+    func under( _ aRow: Int ) -> Int
     {
-        ( row + 1 ) % rows
+        ( aRow + 1 ) % rows
     }
     
     mutating func addVipers()
@@ -121,9 +127,9 @@ struct Playfield
         setCell( row: 18, col: 57, true )
     }
     
-    func computeNeighbours( row: Int, col: Int ) -> Int
+    func computeNeighbours( row: Int, col: Int ) -> UInt8
     {
-        var n = 0
+        var n: UInt8 = 0
         if cell( row: row, col: leftOf( col ))      { n += 1 }
         if cell( row: row, col: rightOf( col ))     { n += 1 }
 
@@ -139,49 +145,71 @@ struct Playfield
     }
 }
 
+enum ePlayState
+{
+    case Edit
+    case Live
+}
+
 struct ContentView: View {
-    @State private var field0 = Playfield(rows: 50, cols: 75)
-    @State private var field1 = Playfield(rows: 50, cols: 75)
+    @State private var field = Playfield(rows: 75, cols: 100)
     @State var stopTimer = false
     @State var cellCount = 0
     @State var generation = 0
+    @State var state = ePlayState.Edit
 
     var body: some View {
-        VStack( spacing: 1 ) {
+        VStack( spacing: 0 ) {
             HStack {
-                Button("Start") {
-                    Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true ) { timer in
-                        if stopTimer {
-                            timer.invalidate()
-                        } else {
-                            next()
+                Button( action: {
+                    if state == ePlayState.Edit {
+                        state = ePlayState.Live
+                        Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true ) { timer in
+                            if stopTimer {
+                                timer.invalidate()
+                            } else {
+                                next()
+                            }
                         }
                     }
+                }) {
+                    Text( "Start" )
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                        .padding(.all)
                 }
-                .padding()
-                .padding(.horizontal)
-                .background(Color.blue)
-                .cornerRadius(10)
-
-                Button("Stop") {
-                    stopTimer = true
-                }
-                .padding()
-                .padding(.horizontal)
-                .buttonStyle(.bordered)
-                .buttonBorderShape(.roundedRectangle)
                 .controlSize(.large)
-                .tint(.blue)
+                .background(( state == ePlayState.Edit ? Color.blue : Color.gray ).cornerRadius(10))
+
+                Button( action: {
+                    if state == ePlayState.Live {
+                        state = ePlayState.Edit
+                        stopTimer = true
+                    }
+                }) {
+                    Text( "Stop" )
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                        .padding(.all)
+
+                }
+                .controlSize(.large)
+                .background(( state == ePlayState.Live ? Color.blue : Color.gray ).cornerRadius(10))
             }
             .padding()
             
-            ForEach( 0..<field0.rows, id: \.self ) { row in
-                HStack( spacing: 1 ) {
-                    ForEach( 0..<field0.cols, id: \.self ) { col in
-                        let val = field0.cell( row: row, col: col )
+            ForEach( 0..<field.rows, id: \.self ) { row in
+                HStack( spacing: 0 ) {
+                    ForEach( 0..<field.cols, id: \.self ) { col in
+                        let val = field.cell( row: row, col: col )
                         Image( systemName: val ? "circle.fill" : "circle" )
                             .foregroundColor( val ? Color.white : Color.gray )
                             .font(.caption)
+                            .onTapGesture {
+                                if state == ePlayState.Edit {
+                                    field.setCell(row: row, col: col, !field.cell( row: row, col: col ))
+                                }
+                            }
                     }
                 }
             }
@@ -198,21 +226,33 @@ struct ContentView: View {
     func next()
     {
         cellCount = 0
-        for row in 0..<field0.rows {
-            for col in 0..<field0.cols {
-                let n = field0.computeNeighbours(row: row, col: col )
-                
-                if field0.cell( row: row, col: col ) {
-                    field1.setCell( row: row, col: col, n == 2 || n == 3 )
-                } else {
-                    field1.setCell( row: row, col: col, n == 3 )
+        for row in 0..<field.rows {
+            for col in 0..<field.cols {
+                field.row[ row ].col[ col ].neighbours = field.computeNeighbours(row: row, col: col )
+            }
+        }
+        for row in 0..<field.rows {
+            for col in 0..<field.cols {
+                switch field.row[ row ].col[ col ].neighbours {
+                case 2:
+                    //if field.row[ row ].col[ col ].cell
+                    break
+                case 3:
+                    field.row[ row ].col[ col ].cell = true
+                default:
+                    field.row[ row ].col[ col ].cell = false
                 }
-                if field1.cell( row: row, col: col ) {
+
+//                if field0.cell( row: row, col: col ) {
+//                    field1.setCell( row: row, col: col, n == 2 || n == 3 )
+//                } else {
+//                    field1.setCell( row: row, col: col, n == 3 )
+//                }
+                if field.cell( row: row, col: col ) {
                     cellCount += 1
                 }
             }
         }
-        field0 = field1
         generation += 1
     }
 }
